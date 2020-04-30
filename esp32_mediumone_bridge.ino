@@ -19,7 +19,7 @@
 #define VERSION   "0.8.0"
 
 #include <WiFiClientSecure.h>   // https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure
-#define MQTT_MAX_PACKET_SIZE 512
+#define MQTT_MAX_PACKET_SIZE 1024
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
@@ -350,7 +350,7 @@ void cmdStatusMqtt(char *payload)
 void cmdPublishMqtt(char *payload)
 {
   // {"topic":"thepublishtopic","msg":"msg to publish"}
-  StaticJsonDocument<512> json_payload;
+  StaticJsonDocument<1024> json_payload;
   DeserializationError err = deserializeJson(json_payload, payload);
   if (err) {
     CONSOLE_SERIAL.println("ERROR: Could not parse JSON payload");
@@ -392,14 +392,11 @@ void cmdPublishMqtt(char *payload)
         BLINK_LED_ERROR();
         CLIENT_SERIAL.println(RESULT_ERROR_MQTT_PUBLISH_FAILED_NOT_CONNECTED);   // second error msg
       } else {
-        CONSOLE_SERIAL.println(topic);
-        CONSOLE_SERIAL.println(msg);
+        CONSOLE_SERIAL.print("Topic: "); CONSOLE_SERIAL.println(topic);
+        CONSOLE_SERIAL.print("Message: "); CONSOLE_SERIAL.println(msg);
+        CONSOLE_SERIAL.print("Message Len: "); CONSOLE_SERIAL.println(strlen(msg));
         if (mqttClient.publish(topic, msg)) {
-          CONSOLE_SERIAL.print("Published to topic '");
-          CONSOLE_SERIAL.print(topic);
-          CONSOLE_SERIAL.print("' msg '");
-          CONSOLE_SERIAL.print(msg);
-          CONSOLE_SERIAL.println("'");
+          CONSOLE_SERIAL.println("Publish successful");
           BLINK_LED_OK();
           CLIENT_SERIAL.println(RESULT_OK);
         } else {

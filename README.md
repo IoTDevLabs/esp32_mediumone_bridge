@@ -25,6 +25,7 @@ Author: Greg Toth
 * In Arduino IDE, from Tools > Manage Libraries... install these libraries:
     * PubSubClient by Nick O'Leary, version 2.7.0 or higher
     * ArduinoJson by Benoit Blanchon, version 6.15.0 or higher
+* For the PubSubClient library, edit Arduino/libraries/PubSubClient/src/PubSubClient.h and change MQTT_MAX_PACKET_SIZE to be 1024 instead of 128.
 * Open the application source code file esp32_mediumone_bridge.ino from repository directory.
 
 ### Configuring the ESP32 Serial Port
