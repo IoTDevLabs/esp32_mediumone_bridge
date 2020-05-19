@@ -16,7 +16,7 @@
  */
 
 #define IDENT     "MediumOne ESP32 Bridge"
-#define VERSION   "0.8.0"
+#define VERSION   "0.8.1"
 
 #include <WiFiClientSecure.h>   // https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure
 #define MQTT_MAX_PACKET_SIZE 1024
@@ -70,6 +70,9 @@ char                mqttUsername[80] = "";
 char                mqttPassword[80] = "";
 char                mqttClientId[80] = "ESP32Bridge";
 
+#define USE_ROOT_CA     0
+
+#if USE_ROOT_CA == 1
 /* Root CA for mqtt.mediumone.com. Expires May 30, 2020. */
 const char *root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
@@ -102,6 +105,7 @@ const char *root_ca = \
 "+7eYEqUoBfjcoeK86NSDwpHSXIqaVa3p0SFlSQ16VYE0YWHCPvCzI4bZJGlePq4g\n" \
 "z5Z2KDJ4sJ7bbAtAU44vI1wTv2aFpY45RAIS4nAFjvwYPRVY\n" \
 "-----END CERTIFICATE-----\n";
+#endif
 
 /* Client result codes */
 #define RESULT_OK                           "OK"
@@ -297,7 +301,9 @@ void cmdConnectMqtt(char *payload)
     strcpy(mqttPassword, (const char*)json_payload["password"]);
     mqttPort = json_payload["port"].as<int>();
     mqttClient.setServer(mqttHostname, mqttPort);
+#if USE_ROOT_CA == 1
     wifiClient.setCACert(root_ca);
+#endif
     CONSOLE_SERIAL.print("Connecting to MQTT broker ");
     CONSOLE_SERIAL.print(mqttHostname);
     CONSOLE_SERIAL.print(" on port ");
@@ -480,6 +486,10 @@ int haveFullCmd(void)
 }
 
 void loop() {
+
+  /* Maintain MQTT processing */
+
+  mqttClient.loop();
 
   /* Read incoming bytes */
 
