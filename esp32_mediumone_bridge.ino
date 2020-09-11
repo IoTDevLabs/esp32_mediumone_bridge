@@ -16,7 +16,7 @@
  */
 
 #define IDENT     "MediumOne ESP32 Bridge"
-#define VERSION   "0.8.1"
+#define VERSION   "0.8.2"
 
 #include <WiFiClientSecure.h>   // https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure
 #define MQTT_MAX_PACKET_SIZE 1024
@@ -24,22 +24,29 @@
 #include <ArduinoJson.h>
 
 #define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
-#define CLIENT_SERIAL     Serial1     /* client serial port for incoming AT commands */
+#define CLIENT_SERIAL     Serial2     /* client serial port for incoming AT commands */
 #define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define HAS_LED_BUILTIN   0           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
 /* Defaults on Adafruit HUZZAH32 ESP32 Feather:
- *  Serial RX & TX are mapped to USB-to-Serial converter.
- *  Serial1 RX is mapped to GPIO16 = chip pin 27 (IO16) = JP3-3 (RX),
- *  Serial1 TX is mapped to GPIO17 = chip pin 28 (IO17) = JP3-2 (TX).
- *  For HUZZAH32 use CONSOLE_SERIAL=Serial, CLIENT_SERIAL=Serial1 and REMAP_UART_PINS=0.
+ *   Serial RX & TX are mapped to USB-to-Serial converter.
+ *   Serial1 RX is mapped to GPIO16 = chip pin 27 (IO16) = JP3-3 (RX),
+ *   Serial1 TX is mapped to GPIO17 = chip pin 28 (IO17) = JP3-2 (TX).
+ *   For HUZZAH32 use CONSOLE_SERIAL=Serial, CLIENT_SERIAL=Serial1, REMAP_UART_PINS=0, and HAS_LED_BUILTIN=1.
  * Defaults on ESP32 DevKitC:
- *  Serial RX & TX are mapped to USB-to-Serial converter.
- *  which is also connected to TXD0 (J3-4) & RXD0 (J3-5). 
- *  Serial1 RX is mapped to GPIO9 = chip pin 17 = SD2 = J2-16,  [spi flash]
- *  Serial1 TX is mapped to GPIO10 = chip pin 18 = SD3 = J2-17. [spi flash]
- *  Serial2 RX is mapped to GPIO16 = chip pin 27 = IO16 = J3-12,
- *  Serial2 TX is mapped to GPIO17 = chip pin 28 = IO17 = J3-11.
- *  For DevKitC use CONSOLE_SERIAL=Serial and either CLIENT_SERIAL=Serial1 and REMAP_UART_PINS=1,
- *    or CLIENT_SERIAL=Serial2 and REMAP_UART_PINS=0.
+ *   Serial RX & TX are mapped to USB-to-Serial converter
+ *   which is also connected to TXD0 (J3-4) & RXD0 (J3-5). 
+ *   Serial1 RX is mapped to GPIO9 = chip pin 17 = SD2 = J2-16,  [spi flash]
+ *   Serial1 TX is mapped to GPIO10 = chip pin 18 = SD3 = J2-17. [spi flash]
+ *   Serial2 RX is mapped to GPIO16 = chip pin 27 = IO16 = J3-12,
+ *   Serial2 TX is mapped to GPIO17 = chip pin 28 = IO17 = J3-11.
+ *   For ESP32 DevKitC use CONSOLE_SERIAL=Serial and either CLIENT_SERIAL=Serial1 and REMAP_UART_PINS=1,
+ *     or CLIENT_SERIAL=Serial2 and REMAP_UART_PINS=0. Set HAS_LED_BUILTIN=1.
+ * Defaults on Mikro WiFi BLE Click:
+ *   Serial RX & TX are mapped to RX and TX on 1x5 header. This is also the programming interface.
+ *   Serial2 RX is mapped to GPIO16 = chip pin 27 = mikroBUS RX pin
+ *   Serial2 TX is mapped to GPIO17 = chip pin 28 = mikroBUS TX pin
+ *   For Mikro WiFi BLE Click use CONSOLE_SERIAL=Serial, CLIENT_SERIAL=Serial2, REMAP_UART_PINS=0, 
+ *     and HAS_LED_BUILTIN=0.
  */
 #if defined(REMAP_UART_PINS) && REMAP_UART_PINS == 1
 /* Optional serial RX & TX port pin remapping used with CLIENT_SERIAL. */
@@ -49,8 +56,15 @@
 /* Serial data rates */
 #define CONSOLE_SERIAL_BAUD   115200
 #define CLIENT_SERIAL_BAUD    115200
+
 /* Control whether onboard LED is blinked when commands are processed */
+#if defined(HAS_LED_BUILTIN) && HAS_LED_BUILTIN == 0
+  /* When no LED is present, cannot control LED */
+#define CONTROL_LED     0           /* 0=no LED control */
+#else
+  /* When LED is present, select whether to control LED (default=yes) */
 #define CONTROL_LED     1           /* 0=no LED control, 1=control LED */
+#endif
 /* Number of LED blinks for OK or ERROR condition (when CONTROL_LED == 1) */
 #define OK_BLINKS       1
 #define ERROR_BLINKS    3

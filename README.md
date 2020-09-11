@@ -8,6 +8,7 @@ Author: Greg Toth
 
 * Adafruit HUZZAH32
 * ESP32 DevKitC and compatible variants
+* Mikro WiFi BLE Click
 
 ### Development Tools & Libraries
 
@@ -36,11 +37,26 @@ In esp32_mediumone_bridge.ino ```#define CLIENT_SERIAL``` controls which serial 
 
 ### Programming the ESP32 Board
 
-Connect the ESP32 board to your computer using a USB cable, then compile and upload the program to the board.
+For ESP32 boards that have a USB serial port, connect the ESP32 board to your computer using a USB cable, then compile and upload the program to the board.
+
+For ESP32 boards without a USB serial port, a USB-to-TTL Serial conversion cable is needed such as Adafruit 954. Instructions for programming a "bare" ESP32 module can be found in various places on the Internet and the process generally follows the steps below.
+
+For the Mikro WiFi BLE Click, program the ESP32 using these steps:
+
+* Power the WiFi BLE Click from a +3.3V DC source connected to mikroBUS 3V3 and GND pins. DO NOT use the USB-to-TTL Serial cable power wire since it is 5V and is too high for the +3.3V needed on the ESP32.
+* Connect a USB-to-TTL Serial cable such as Adafruit 954 between the computer and the WiFi BLE Click according to this pinout:
+    * Adafruit 954 Black wire (GND) to WiFi BLE Click GND.
+    * Adafruit 954 White wire (RX) to TX pin on 1x5 header on WiFi BLE Click.
+    * Adafruit 954 Green wire (TX) to RX pin on 1x5 header on WiFi BLE Click.
+* Connect EN on 1x5 header on WiFi BLE Click to GND. This enables boot mode during the next ESP32 reset.
+* Momentarily connect IO0 on 1x5 header on WiFi BLE Click to GND. This resets the ESP32 and causes it to enter bootloader mode.
+* In the Arduino IDE, select board = ESP Dev Module and port = the serial port name for the USB-to-TTL Serial converter cable.
+* In the Arduino IDE, upload the program to the ESP32 and monitor the programming status messages in the Arduino IDE.
+* After programming, disconnect IO0 from GND and momentarily connect EN to ground to reset the ESP32. It should now restart and run the application program.
 
 ### Issuing Commands
 
-AT commands and responses are received on the CLIENT_SERIAL port, e.g. Serial1. The CONSOLE_SERIAL port (e.g. Serial on USB) is used for diagnostic messages and can be disconnected when the board is powered from an alternate source.
+AT commands and responses are received on the CLIENT_SERIAL port, e.g. Serial1 or Serial2. The CONSOLE_SERIAL port (e.g. Serial on USB) is used for diagnostic messages and can be disconnected when the board is powered from an alternate source.
 
 ### AT Commands
 
@@ -65,4 +81,6 @@ AT commands are sent in a single string that must end with a Line Feed character
 ### Server Root CA Certificate for mqtt.mediumone.com
 
 The bridge application contains the Root CA certificate for mqtt.mediumone.com which is needed for TLS MQTT connections. The current Root CA certificate expires on May 30, 2020 and will no longer work after that date. See root_ca variable in the source code.
+
+Note: Explicit use of the hard-coded root CA is disabled by default (see the source code) and normally it shouldn't be needed since the ESP32 has a collection of root CAs built in.
 
