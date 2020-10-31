@@ -35,6 +35,8 @@ Default settings are for Adafruit HUZZAH32 board.
 
 In esp32_mediumone_bridge.ino ```#define CLIENT_SERIAL``` controls which serial port is used for the UART AT command input/output. Only TX & RX lines are used with no hardware flow control lines. Since this app is based on the Arduino programming model, it will typically be ```Serial```, ```Serial1``` or ```Serial2```. Usually ```Serial``` refers to the primary USB serial port on the ESP32 board which may or may not be the one you want to use for AT commands. See the source code for details about UART TX/RX pin mappings for Serialx on certain target boards. For Adafruit HUZZAH32 CLIENT_SERIAL is Serial1, REMAP_UART_PINS is 0, and Serial1 TX & RX are on the board's Feather connector.
 
+A set of pre-defined board selections are available in the source code based on #defines that begin with ```BOARD_SELECT_```. Each defined board selects an appropriate serial port configuration for that particular board, with variants for swapped TX and RX pins. To select a particular board configuration, set that #define to 1 and set all the rest to 0. The ```BOARD_SELECT_CUSTOM``` selector allows you to define custom settings.
+
 ### Programming the ESP32 Board
 
 For ESP32 boards that have a USB serial port, connect the ESP32 board to your computer using a USB cable, then compile and upload the program to the board.

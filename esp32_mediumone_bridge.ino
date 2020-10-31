@@ -16,21 +16,73 @@
  */
 
 #define IDENT     "MediumOne ESP32 Bridge"
-#define VERSION   "0.8.2"
+#define VERSION   "0.8.3"
 
 #include <WiFiClientSecure.h>   // https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure
 #define MQTT_MAX_PACKET_SIZE 1024
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
+  /* Board select */
+#define BOARD_SELECT_HUZZAH32               0
+#define BOARD_SELECT_HUZZAH32_SWAPPED       1
+#define BOARD_SELECT_ESP32_DEVKITC          0
+#define BOARD_SELECT_ESP32_DEVKITC_SWAPPED  0
+#define BOARD_SELECT_MIKRO_WIFI_BLE_CLICK   0
+#define BOARD_SELECT_CUSTOM                 0
+
+#if defined(BOARD_SELECT_HUZZAH32) && BOARD_SELECT_HUZZAH32 == 1
+  /* Adafruit HUZZAH32 with default TX/RX pins */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial1     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define HAS_LED_BUILTIN   1           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#elif defined(BOARD_SELECT_HUZZAH32_SWAPPED) && BOARD_SELECT_HUZZAH32_SWAPPED == 1
+  /* Adafruit HUZZAH32 with swapped TX/RX pins */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial1     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   1           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define CLIENT_SERIAL_RX_GPIO   17    /* GPIO17 = chip pin 28 (IO17) = JP1-2 on HUZZAH32 */
+#define CLIENT_SERIAL_TX_GPIO   16    /* GPIO16 = chip pin 27 (IO16) = JP1-3 on HUZZAH32 */
+#define HAS_LED_BUILTIN   1           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#elif defined(BOARD_SELECT_ESP32_DEVKITC) && BOARD_SELECT_ESP32_DEVKITC == 1
+  /* ESP32 DevKitC with default TX/RX pins */
 #define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
 #define CLIENT_SERIAL     Serial2     /* client serial port for incoming AT commands */
 #define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define HAS_LED_BUILTIN   1           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#elif defined(BOARD_SELECT_ESP32_DEVKITC_SWAPPED) && BOARD_SELECT_ESP32_DEVKITC_SWAPPED == 1
+  /* ESP32 DevKitC with swapped TX/RX pins */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial2     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   1           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define CLIENT_SERIAL_RX_GPIO   4     /* GPIO4 = chip pin 26 = IO4 = J3-13 on DevKitC */
+#define CLIENT_SERIAL_TX_GPIO   2     /* GPIO2 = chip pin 24 = IO2 = J3-15 on DevKitC */
+#define HAS_LED_BUILTIN   1           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#elif defined(BOARD_SELECT_MIKRO_WIFI_BLE_CLICK) && BOARD_SELECT_MIKRO_WIFI_BLE_CLICK
+  /* Mikro Wi-Fi BLE Click */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial2     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define HAS_LED_BUILTIN   1           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#elif defined(BOARD_SELECT_CUSTOM) && BOARD_SELECT_CUSTOM == 1
+  /* Custom board definition */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial1     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
 #define HAS_LED_BUILTIN   0           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#else
+  /* Default settings if no pre-defined board selected */
+#define CONSOLE_SERIAL    Serial      /* console serial port for info & debug messages */
+#define CLIENT_SERIAL     Serial1     /* client serial port for incoming AT commands */
+#define REMAP_UART_PINS   0           /* 0=use default TX/RX pin mappings, 1=remap to alternate pins */
+#define HAS_LED_BUILTIN   0           /* 0=board does not have LED_BUILT_IN, 1=has LED_BUILTIN */
+#endif
+
 /* Defaults on Adafruit HUZZAH32 ESP32 Feather:
  *   Serial RX & TX are mapped to USB-to-Serial converter.
- *   Serial1 RX is mapped to GPIO16 = chip pin 27 (IO16) = JP3-3 (RX),
- *   Serial1 TX is mapped to GPIO17 = chip pin 28 (IO17) = JP3-2 (TX).
+ *   Serial1 RX is mapped to GPIO16 = chip pin 27 (IO16) = JP1-3 (RX),
+ *   Serial1 TX is mapped to GPIO17 = chip pin 28 (IO17) = JP1-2 (TX).
  *   For HUZZAH32 use CONSOLE_SERIAL=Serial, CLIENT_SERIAL=Serial1, REMAP_UART_PINS=0, and HAS_LED_BUILTIN=1.
  * Defaults on ESP32 DevKitC:
  *   Serial RX & TX are mapped to USB-to-Serial converter
@@ -48,11 +100,7 @@
  *   For Mikro WiFi BLE Click use CONSOLE_SERIAL=Serial, CLIENT_SERIAL=Serial2, REMAP_UART_PINS=0, 
  *     and HAS_LED_BUILTIN=0.
  */
-#if defined(REMAP_UART_PINS) && REMAP_UART_PINS == 1
-/* Optional serial RX & TX port pin remapping used with CLIENT_SERIAL. */
-#define CLIENT_SERIAL_RX_GPIO   4   /* GPIO4 = chip pin 26 = IO4 = J3-13 on DevKitC */
-#define CLIENT_SERIAL_TX_GPIO   2   /* GPIO2 = chip pin 24 = IO2 = J3-15 on DevKitC */
-#endif
+
 /* Serial data rates */
 #define CONSOLE_SERIAL_BAUD   115200
 #define CLIENT_SERIAL_BAUD    115200
