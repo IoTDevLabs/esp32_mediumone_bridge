@@ -24,8 +24,8 @@
 #include <ArduinoJson.h>
 
   /* Board select */
-#define BOARD_SELECT_HUZZAH32               0
-#define BOARD_SELECT_HUZZAH32_SWAPPED       1
+#define BOARD_SELECT_HUZZAH32               1
+#define BOARD_SELECT_HUZZAH32_SWAPPED       0
 #define BOARD_SELECT_ESP32_DEVKITC          0
 #define BOARD_SELECT_ESP32_DEVKITC_SWAPPED  0
 #define BOARD_SELECT_MIKRO_WIFI_BLE_CLICK   0
